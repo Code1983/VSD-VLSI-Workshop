@@ -74,6 +74,19 @@ More details are in [Openlane Git](https://github.com/efabless/openlane)
 
 # Day 3: 16-Mask CMOS fabrication process, ngspice simulations, MAGIC Tech File update for DRC
 
-# Day 4
+## MAGIC DRC Engine
+Different DRC styles
+Basic rules type
+Complicated rule types
+Rules handled separatly from interactive DRC Engine
 
-# Day 5
+### Finding problems in DRC section of MAGIC tech file for SKY130 PDK
+
+**Important links**
+* [Using MAGIC](http://opencircuitdesign.com/magic/userguide.html)
+* [MAGIC Tech Files](http://opencircuitdesign.com/magic/techref/maint2.html)
+* [PDK Documentation](https://skywater-pdk.readthedocs.io/en/latest/)
+
+# Day 4: Timing Analysis
+
+# Day 5: Place and Route
