@@ -147,14 +147,24 @@ Characterize synthesis results
 # Day 4: Timing Analysis
 
 ## Timing modelling using delay tables
-* Timing libs and steps to include new cell in synthesis
-  ** Guidelines
-  *** Input and output port must lie in the intersection of the vertical and horizontal tracks
-  *** Width of the standard cell = odd multiples of horizontal track pitch
-  *** Height of the standard cell = odd multiples of horizontal track pitch. Sky130 track information is present in `/sky130A/libs.tech/openlane/sky130_fd_sc_hd/tracks.info` in formatted in columns layer, direction, offset, pitch
-* Delay tables
-* Convert MAGIC layout to standard cell LEF
-* Include custom standard cell in Openlane synthesis and fix slack
+* Converting MAGIC layout to standard cell LEF and including custom standard cell in Openlane synthesis and fix slack
+  * Guidelines
+    * Input and output port must lie in the intersection of the vertical and horizontal tracks
+    * Width of the standard cell = odd multiples of horizontal track pitch
+    * Height of the standard cell = odd multiples of horizontal track pitch. Sky130 track information is present in `.../sky130A/libs.tech/openlane/sky130_fd_sc_hd/tracks.info` in formatted in columns layer, direction, offset, pitch
+  * pressing "g" in Magic activates grid. This can be verified by a black dot towards bottom left corner.
+  * Magic `% grid` command draws the grid. `% help grid` will show the format as `grid xSpacing ySpacing xOrigin yOrigin`This can be set as per track definition and to review the positioning of ports and standard cell width and hieght.
+  * Port definition is required before LEF can be extracted from MAGIC aas per instruction [here](https://github.com/nickson-jose/vsdstdcelldesign)
+  * LEF can be extracted by `% lef write` in Magic
+  * A library used in Openlane is `sky130_fd_sc_hd_typical.lib`. This has all the cells and its characteristics like temperature, voltage, timing definitions.
+  * The new cell needs to be included in OpenLANE flow libraries so that *abc* can pick it for synthesis. This requires `set ::env(EXTRA_LEFS) [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]` added to config.tcl and `set lefs [glob $::env(DESIGN_DIR)/src/*.lef]` and `add_lefs -src $lefs` to interactive flow. `runs/*/tmp/merged.lef` should have the new cell.
+  * `run_synthesis` should pick the new cell. This process ends by providing timing information.
+  * OpenLANE switch information is present in `.../openlane/configuration/README.md`. Switches can be set as `set $::env(SYNTH_STRATERGY) 1`. Some switches updated to improve timing were SYNTH_STRATERGY=1, SYNTH_BUFFERING=1, SYNTH_SIZING=1, SYNTH_DRIVING_CELL=sky130_fd_sc_hd__inv_8
+  * some abbreviations in the report are wns=worst network slack, tns=total network slack.
+  * `run_floorplan` should converge on `OVFL`.The results would be in `runs/*/results/placement/*.placement.def`. .def files can be opened in Magic with `magic -T <link to tech file>/aky130A.tech lef read <link to lef file>/merged.lef def read <link to def file>/*.placement.def`
+  * Magic `% expand` will show content of subcells.
+  
+* Delay tables TODO
 
 ## Timing Analysis with ideal clocks using OpenSTA
 * Set-up timing analysis
