@@ -35,7 +35,7 @@ Day 5 - Final steps for RTL2GDS
 
 # Day 1: Intro to EDA tools, Openlane, RISC-V
 
-##Basic Concepts
+## Basic Concepts
 Terms
 * Package
 * chip
@@ -44,7 +44,7 @@ Terms
 * die
 * IP
 
-##SOC Design and OpenLANE
+## SOC Design and OpenLANE
 
 
 
@@ -80,62 +80,62 @@ Characterize synthesis results
 
 # Day 2: Chip Floor Planning and Placement, Cell Design and characterization
 
-##Chip Floor planning considerations
-Utilization factor and aspect ratio
-Preplaced Cells
-De-coupling Capacitors
-Power Planning
-Pin Placement and logical cell placement blockage
-Run floorplan using OpenLANE
-Review Floorplan layout in MAGIC
+## Chip Floor planning considerations
+* Utilization factor and aspect ratio
+* Preplaced Cells
+* De-coupling Capacitors
+* Power Planning
+* Pin Placement and logical cell placement blockage
+* Run floorplan using OpenLANE
+* Review Floorplan layout in MAGIC
 
-##Library Binding and Placement
-Netlist binding and initial place design
-Optimize placement optimization
-Final placement optimization
-libraries and characterization
-Congestion awareness
+## Library Binding and Placement
+* Netlist binding and initial place design
+* Optimize placement optimization
+* Final placement optimization
+* libraries and characterization
+* Congestion awareness
 
-##Cell design and characterizzation flows
-Inputs for cell design flow
-Circuit design step
-Layout design step
-Typical characterization flow
+## Cell design and characterizzation flows
+* Inputs for cell design flow
+* Circuit design step
+* Layout design step
+* Typical characterization flow
 
-##General timining characterization parameters
-Timing threshold functions
-Propagation delay and transition time
+## General timining characterization parameters
+* Timing threshold functions
+* Propagation delay and transition time
 
 # Day 3: 16-Mask CMOS fabrication process, ngspice simulations, MAGIC Tech File update for DRC
 
-##CMOS inverter ngspice simulations
-IO placer revision
-Spice deck creation and simulation
-Switching threshold Vm
-Static and dynamic simulation
-Standard Cell design
+## CMOS inverter ngspice simulations
+* IO placer revision
+* Spice deck creation and simulation
+* Switching threshold Vm
+* Static and dynamic simulation
+* Standard Cell design
 
-##CMOS Fabrication process
-Create Active regions
-Formation and N-well and P-well
-Formation of gate terminal
-Lightly Doped drain (LDD) formation
-Source - drain formation
-Local interconnect formation
-Higher level metal formation
+## CMOS Fabrication process
+* Create Active regions
+* Formation and N-well and P-well
+* Formation of gate terminal
+* Lightly Doped drain (LDD) formation
+* Source - drain formation
+* Local interconnect formation
+* Higher level metal formation
 
-##Using Sky130 tech file
-Sky130 layers and LEF using inverter
-Create standard cell layout and extract spice netlist
-Create Spice deck using Sky130 tech
-Characterrize inverter using sky130 model
+## Using Sky130 tech file
+* Sky130 layers and LEF using inverter
+* Create standard cell layout and extract spice netlist
+* Create Spice deck using Sky130 tech
+* Characterrize inverter using sky130 model
 
 
 ## MAGIC DRC Engine
-Different DRC styles
-Basic rules type
-Complicated rule types
-Rules handled separatly from interactive DRC Engine
+* Different DRC styles
+* Basic rules type
+* Complicated rule types
+* Rules handled separatly from interactive DRC Engine
 
 ### Finding problems in DRC section of MAGIC tech file for SKY130 PDK
 
@@ -146,43 +146,43 @@ Rules handled separatly from interactive DRC Engine
 
 # Day 4: Timing Analysis
 
-##Timing modelling using delay tables
-timing libs and steps to include new cell in synthesis
-Delay tables
-Convert MAGIC layout to standard cell LEF
-Include custom standard cell in Openlane synthesis and fix slack
+## Timing modelling using delay tables
+* timing libs and steps to include new cell in synthesis
+* Delay tables
+* Convert MAGIC layout to standard cell LEF
+* Include custom standard cell in Openlane synthesis and fix slack
 
-##Timing Analysis with ideal clocks using OpenSTA
-Set-up timing analysis
-Clock jitter and uncertainty
-OpenSTA for post-synth timing analysis
-optimizing synthesis to reduce set-up violations
-Baisc timing ECO
+## Timing Analysis with ideal clocks using OpenSTA
+* Set-up timing analysis
+* Clock jitter and uncertainty
+* OpenSTA for post-synth timing analysis
+* optimizing synthesis to reduce set-up violations
+* Baisc timing ECO
 
-##Clock tree systesis using TritonCTS
-Clock tree routing and buffering using H-tree algorithm
-Crosstalk and clock net shielding
-using TritonCTS
+## Clock tree systesis using TritonCTS
+* Clock tree routing and buffering using H-tree algorithm
+* Crosstalk and clock net shielding
+* using TritonCTS
 
-##Timing Analysis with real clocks using OpenSTA
-Setup timing analysis using real clocks
-Hold timing analysis using real clocks
-Analyze timing with real clocks using OpenSTA
-OpenSTA with right timing libraries and CTS
-Impact of bigger CTS buffers on set-up and hold timing
+## Timing Analysis with real clocks using OpenSTA
+* Setup timing analysis using real clocks
+* Hold timing analysis using real clocks
+* Analyze timing with real clocks using OpenSTA
+* OpenSTA with right timing libraries and CTS
+* Impact of bigger CTS buffers on set-up and hold timing
 
 # Day 5: Place and Route
 
-##Routing and design rule check (DRC)
-Introduction to Maze Routing - Lee's algorithm
-Design Rule Check
+## Routing and design rule check (DRC)
+* Introduction to Maze Routing - Lee's algorithm
+* Design Rule Check
 
-##Power distribution network and routing
-Building power distribution network
-power straps to standard cell power
-gobal and detail routing and configuring TritonRoute
+## Power distribution network and routing
+* Building power distribution network
+* power straps to standard cell power
+* gobal and detail routing and configuring TritonRoute
 
-##TritonRoute features
-Honors pre-processed route guides
-Inter-guide connectivity and intra & inter-layer routing
-Routing topology ad final files list post route
+## TritonRoute features
+* Honors pre-processed route guides
+* Inter-guide connectivity and intra & inter-layer routing
+* Routing topology ad final files list post route
