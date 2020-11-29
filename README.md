@@ -147,7 +147,11 @@ Characterize synthesis results
 # Day 4: Timing Analysis
 
 ## Timing modelling using delay tables
-* timing libs and steps to include new cell in synthesis
+* Timing libs and steps to include new cell in synthesis
+  ** Guidelines
+  *** Input and output port must lie in the intersection of the vertical and horizontal tracks
+  *** Width of the standard cell = odd multiples of horizontal track pitch
+  *** Height of the standard cell = odd multiples of horizontal track pitch. Sky130 track information is present in `/sky130A/libs.tech/openlane/sky130_fd_sc_hd/tracks.info` in formatted in columns layer, direction, offset, pitch
 * Delay tables
 * Convert MAGIC layout to standard cell LEF
 * Include custom standard cell in Openlane synthesis and fix slack
