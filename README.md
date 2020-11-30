@@ -338,3 +338,16 @@ Characterize synthesis results
 * Honors pre-processed route guides
 * Inter-guide connectivity and intra & inter-layer routing
 * Routing topology ad final files list post route
+  * MST - Minimum spanning tree - MST
+  * `runs/*/reports/routing/tritonRoute.drc` will have the violations. `runs/*/reports/routing/fastroute.guide` is the output from global routing. The contents are power nets.
+  * Post routing parasitic needs to be extracted. SPEC extracter engine can be used. the command is 
+  ```
+  $ cd SPEF_EXTRACTOR
+  $ python3 main.py <design runs path>/tmp/merged.lef <design runs path>/results/routing/*.def  # spec file will be present in <design runs path>/results/routing/*.spef
+  ```
+  * STA would require a new command `read_spef <location of .spef file>`
+  * Following files are in results/synthesis folder
+    * design.synthesis.v         - post synthesis
+    * design.synthesis_cts.v     - post CTS
+    * design.synthesis_diodes.v  - inserting antenna diodes before routing
+    * design.synthesis_preroute.v- Final netlist before routing. This would be used as post STA analysis.
