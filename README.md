@@ -1,6 +1,7 @@
 # Advanced Physical Design using OpenLANE/Sky130 Workshop
 VSD VLSI Workshop 25-29 Nov 2020
-Currently a work in progress...
+
+Currently a work in progress... The workshop was done in Openlane:rc2 but most of them were replicated on my local machine with openlane:rc5
 
 # Workshop Structure
 Day1 – Inception of open-source EDA, OpenLANE and Sky130 PDK
@@ -326,8 +327,12 @@ Characterize synthesis results
 
 ## Power distribution network and routing
 * Building power distribution network
+  * last run step can be figured by `% $::env(CURRENT_DEF)`
+  * Openlane does not create power distribution network 9PDN) during loorplan. This is create after CTS with command `% gen_pdn`. Thsi creates strap for power and ground.
 * power straps to standard cell power
 * gobal and detail routing and configuring TritonRoute
+  * `% run_routing` will perform routing. The variable ROUTING_STRATEGY specifies the optimization. Value 14 will use the new TrionRoute engine. Value 0 has least optimizations.
+  * Routing is a two step process - global fast route and detail route. Gobal route is done by fastroute. detail outing is done by tritonroute
 
 ## TritonRoute features
 * Honors pre-processed route guides
