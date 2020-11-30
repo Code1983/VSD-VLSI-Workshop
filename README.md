@@ -163,7 +163,12 @@ Characterize synthesis results
   set ::env(LIB_MAX) "<Location to *__slow.lib>"
   set ::env(LIB_SYNTH) "<Location to *__typical.lib>"
   ```
-  * The new cell needs to be included in OpenLANE flow libraries so that *abc* can pick it for synthesis. This requires `set ::env(EXTRA_LEFS) [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]` added to config.tcl and `set lefs [glob $::env(DESIGN_DIR)/src/*.lef]` and `add_lefs -src $lefs` to interactive flow. `runs/*/tmp/merged.lef` should have the new cell.
+  * The new cell needs to be included in OpenLANE flow libraries so that *abc* can pick it for synthesis. This requires `set ::env(EXTRA_LEFS) [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]` added to config.tcl and below to interactive flow after `prep`
+  ```
+  set lefs [glob $::env(DESIGN_DIR)/src/*.lef]
+  add_lefs -src $lefs
+  ```
+  * `runs/*/tmp/merged.lef` should have the new cell.
   * `run_synthesis` should pick the new cell. Update the script at `.../openlane/scripts/sta.tcl` as below after `read_sdc` statement. This process ends by providing timing information.
   ```
   report_checks -path_delay min_max -fields {input_pin slew net cap}
@@ -224,13 +229,27 @@ Characterize synthesis results
   puts "\[INFO\]: Setting load to: $cap_load"
   set_load  $cap_load [all_outputs]
   ```
-  * Then STA can be run as `$ sta 
+  * Then STA can be run as `$ sta sta.conf`. Note below is ruinning in Opensta and will not reflect in OpenLane until updated verilog is saved.
   * Hold-time is significant only after Clock Tree Synthesis(CTS). Before CTS, timing analysis can be considered optimistic. We can measure slew and delay before CTS. Slew is rate of rise or fall of signal. Delay of cell is funtion of input slew and output load. So, more the slew, more would be the delay. More the output capacitance, more would be the delay.
   * Place and Route (PNR) is an iterative process. We keep checking timing and DRC and rerun with a different settings.
   * We can analyze details in Openlane after running `run_synthesis` with following commands
-    * `report_net -connections _*****_`
-    * `replace_cell _*****_ sky130_fd_sc_*`
-    * 
+    * `report_net -connections _#####_`
+    ```
+    % report_net -connections _12912_
+    Net _12912_
+    Driver pins
+    _18453_/X output (sky130_fd_sc_hd__and2_4)
+
+    Load pins
+    _18454_/B input (sky130_fd_sc_hd__or2_4)
+    _18455_/B input (sky130_fd_sc_hd__nand2_4)
+    _18458_/A input (sky130_fd_sc_hd__inv_2)
+    ```
+    * `replace_cell _#####_ sky130_fd_sc_*`
+    * `report_checks -from _#####_ -to _#####_ -through _#####_`
+    * `report_tns`
+    * `report_wns`
+  * After appropriate replacements (usually bigger buffers) for better timing, use `write verilog` to save the verilog with `write_verilog <filename>`
 * optimizing synthesis to reduce set-up violations
 * Baisc timing ECO
 
@@ -243,6 +262,58 @@ Characterize synthesis results
 * Setup timing analysis using real clocks
 * Hold timing analysis using real clocks
 * Analyze timing with real clocks using OpenSTA
+  * Post synthesis we used Opensta outside of OpenLane flow. after CTS, we will use Openroad and Opensta inside Openlane flow. This make all environment variables in Openlane available to OpenSTA.
+  * We will make a database (DB) for initial run and reuse it later. Then we will run the Opensta report as below 
+  ```
+  % openroad
+  % read_lef $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/tmp/merged.lef
+  % read_def $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/results/cts/*.cts.def`
+  % write_db <some_name>.db
+  % read_db <some_name>.db
+  % read_verilog $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/results/synthesis/*synthesis_cts.v
+  % read_liberty -max $::env(LIB_FASTEST)
+  % read_liberty -min $::env(LIB_SLOWEST)`
+  % read_sdc $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.sdc
+  % set_propagated_clock [all_clocks]
+  % report_checks -path_delay min_max -format full_clock_expanded -digits 4
+  % exit
+  ```
+  * `report_checks` prints hold slack first and then set-up slack.
+  * set-up slack can be improved by slowing the clock speed. But not so with hold-slack as this does not depend on lock period.
+  * We need to make sure clock tree built by TritonCTS is for the same corner as is used for OpenSTA does the timing analysis. The timing report can be rerun with differnet library as follows
+  ```
+  % openroad
+  % read_db <some_name>.db
+  % read_liberty -min $::env(LIB_STNTH_COMPLETE)
+  % link_design picorv32a
+  % read_sdc $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.sdc
+  % set_propagated_clock [all_clocks]
+  % report_checks -path_delay min_max -format full_clock_expanded -digits 4
+  % exit
+  ```
+  * TritonCTS currently does not support multicorner clocks.
+  * Clock buffers are stored in a list that can be reviewed and updated as below. Then we can run cts again and review the slack
+  ```
+  % echo $::env(CTS_CLK_BUFFER_LIST)
+  % lreplace $::env(CTS_CLK_BUFFER_LIST) i i  #delete content on index i i
+  % set $::env(CTS_CLK_BUFFER_LIST) [lreplace $::env(CTS_CLK_BUFFER_LIST) i i]     # update the original list. lreplace does not update the original list.
+  % set $::env(CURRENT_DEF) $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/results/placement/*.placement.def  #revert to pre cts DEF file.
+  % run_cts
+  % openroad
+  % read_lef $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/tmp/merged.lef
+  % read_def $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/results/cts/*.cts.def`
+  % write_db <some_name>.db  
+  % read_db <some_name>.db
+  % read_verilog $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/runs/$::env(RUN_TAG)/results/synthesis/*synthesis_cts.v
+  % read_liberty -min $::env(LIB_STNTH_COMPLETE)
+  % link_design picorv32a
+  % set_propagated_clock [all_clocks]
+  % report_checks -path_delay min_max -format full_clock_expanded -digits 4
+  % report_clock_skew -hold         #report clock skew for hold. SHould be less than 10% of clock period
+  % report_clock_skew -setup        #report set-up clock skew
+  % exit
+  % set $::env(CTS_CLK_BUFFER_LIST) [linsert $::env(CTS_CLK_BUFFER_LIST) i sky10_fd_sc_hd__clkbuf_1] # insert a clock buffer to the list
+  ```
 * OpenSTA with right timing libraries and CTS
 * Impact of bigger CTS buffers on set-up and hold timing
 
