@@ -1,5 +1,6 @@
 # Advanced Physical Design using OpenLANE/Sky130 Workshop
 VSD VLSI Workshop 25-29 Nov 2020
+Currently a work in progress...
 
 # Workshop Structure
 Day1 – Inception of open-source EDA, OpenLANE and Sky130 PDK
