@@ -156,10 +156,21 @@ Characterize synthesis results
   * Magic `% grid` command draws the grid. `% help grid` will show the format as `grid xSpacing ySpacing xOrigin yOrigin`This can be set as per track definition and to review the positioning of ports and standard cell width and hieght.
   * Port definition is required before LEF can be extracted from MAGIC aas per instruction [here](https://github.com/nickson-jose/vsdstdcelldesign)
   * LEF can be extracted by `% lef write` in Magic
-  * A library used in Openlane is `sky130_fd_sc_hd_typical.lib`. This has all the cells and its characteristics like temperature, voltage, timing definitions.
+  * A library used in Openlane is `sky130_fd_sc_hd_typical.lib`. This has all the cells and its characteristics like temperature, voltage, timing definitions. An updated lib file also needs to be included as
+  ```
+  set ::env(LIB_SYNTH) "<Location to *__typical.lib>"
+  set ::env(LIB_MIN) "<Location to *__fast.lib>"
+  set ::env(LIB_MAX) "<Location to *__slow.lib>"
+  set ::env(LIB_SYNTH) "<Location to *__typical.lib>"
+  ```
   * The new cell needs to be included in OpenLANE flow libraries so that *abc* can pick it for synthesis. This requires `set ::env(EXTRA_LEFS) [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]` added to config.tcl and `set lefs [glob $::env(DESIGN_DIR)/src/*.lef]` and `add_lefs -src $lefs` to interactive flow. `runs/*/tmp/merged.lef` should have the new cell.
-  * `run_synthesis` should pick the new cell. This process ends by providing timing information.
-  * OpenLANE switch information is present in `.../openlane/configuration/README.md`. Switches can be set as `set $::env(SYNTH_STRATERGY) 1`. Some switches updated to improve timing were SYNTH_STRATERGY=1, SYNTH_BUFFERING=1, SYNTH_SIZING=1, SYNTH_DRIVING_CELL=sky130_fd_sc_hd__inv_8
+  * `run_synthesis` should pick the new cell. Update the script at `.../openlane/scripts/sta.tcl` as below after `read_sdc` statement. This process ends by providing timing information.
+  ```
+  report_checks -path_delay min_max -fields {input_pin slew net cap}
+  report_checks > $::env(opensta_report_file_tag)_main.timing.rpt
+  ```
+  
+  * OpenLANE switch information is present in `.../openlane/configuration/README.md`. Switches can be set as `set $::env(SYNTH_STRATERGY) 1`. Some switches updated to improve timing were SYNTH_STRATERGY=1, SYNTH_BUFFERING=1, SYNTH_SIZING=1, SYNTH_DRIVING_CELL=sky130_fd_sc_hd__inv_8, SYNTH_MAX_FANOUT=4
   * some abbreviations in the report are wns=worst network slack, tns=total network slack.
   * `run_floorplan` should converge on `OVFL`.The results would be in `runs/*/results/placement/*.placement.def`. .def files can be opened in Magic with `magic -T <link to tech file>/aky130A.tech lef read <link to lef file>/merged.lef def read <link to def file>/*.placement.def`
   * Magic `% expand` will show content of subcells.
@@ -169,7 +180,57 @@ Characterize synthesis results
 ## Timing Analysis with ideal clocks using OpenSTA
 * Set-up timing analysis
 * Clock jitter and uncertainty
-* OpenSTA for post-synth timing analysis
+* OpenSTA for post-synth timing analysis.
+  * We can run OpenSTA outside openLane
+  * A configuration file can be prepared as below and can be named as sta.conf
+  ```
+  set_cmd_units -time ns -capacitance pF -current mA -voltage V -resistance kOhm -distance um
+  read_liberty -min </location/to/min_lib>
+  read_liberty -max </location/to/max_lib>
+  read_verilog </location/to/verilog_file>
+  link_design <Top-Module-name>
+  read_sdc </location/to/sdc_file>
+  report_checks -path_delay min_max -fields {slew trans net cap input_pin}
+  report_tns
+  report_wns
+  ```
+  * A SDC file needs to be prepared. It needs to have all variables defined as it is running outside of OpenLane. This is similar to file in `.../openlane/scripts/base.sdc`
+  ```
+  set ::env(CLOCK_PORT) clk
+  set ::env(CLOCK_PERIOD) 12.000
+  set ::env(SYNTH_DRIVING_CELL) sky130_fd_sc_hd__inv_8
+  set ::env(SYNTH_DRIVING_CELL_PIN) Y
+  set ::env(SYNTH_CAP_LOAD) 17.65
+  create_clock [get_ports $::env(CLOCK_PORT)]  -name $::env(CLOCK_PORT)  -period $::env(CLOCK_PERIOD)
+  set IO_PCT  0.2
+  set input_delay_value [expr $::env(CLOCK_PERIOD) * $IO_PCT]
+  set output_delay_value [expr $::env(CLOCK_PERIOD) * $IO_PCT]
+  puts "\[INFO\]: Setting output delay to: $output_delay_value"
+  puts "\[INFO\]: Setting input delay to: $input_delay_value"
+
+  set clk_indx [lsearch [all_inputs] [get_port $::env(CLOCK_PORT)]]
+  #set rst_indx [lsearch [all_inputs] [get_port resetn]]
+  set all_inputs_wo_clk [lreplace [all_inputs] $clk_indx $clk_indx]
+  #set all_inputs_wo_clk_rst [lreplace $all_inputs_wo_clk $rst_indx $rst_indx]
+  set all_inputs_wo_clk_rst $all_inputs_wo_clk
+
+  # correct resetn
+  set_input_delay $input_delay_value  -clock [get_clocks $::env(CLOCK_PORT)] $all_inputs_wo_clk_rst
+  #set_input_delay 0.0 -clock [get_clocks $::env(CLOCK_PORT)] {resetn}
+  set_output_delay $output_delay_value  -clock [get_clocks $::env(CLOCK_PORT)] [all_outputs]
+
+  set_driving_cell -lib_cell $::env(SYNTH_DRIVING_CELL) -pin $::env(SYNTH_DRIVING_CELL_PIN) [all_inputs]
+  set cap_load [expr $::env(SYNTH_CAP_LOAD) / 1000.0]
+  puts "\[INFO\]: Setting load to: $cap_load"
+  set_load  $cap_load [all_outputs]
+  ```
+  * Then STA can be run as `$ sta 
+  * Hold-time is significant only after Clock Tree Synthesis(CTS). Before CTS, timing analysis can be considered optimistic. We can measure slew and delay before CTS. Slew is rate of rise or fall of signal. Delay of cell is funtion of input slew and output load. So, more the slew, more would be the delay. More the output capacitance, more would be the delay.
+  * Place and Route (PNR) is an iterative process. We keep checking timing and DRC and rerun with a different settings.
+  * We can analyze details in Openlane after running `run_synthesis` with following commands
+    * `report_net -connections _*****_`
+    * `replace_cell _*****_ sky130_fd_sc_*`
+    * 
 * optimizing synthesis to reduce set-up violations
 * Baisc timing ECO
 
